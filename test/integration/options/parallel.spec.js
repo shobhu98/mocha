@@ -4,7 +4,6 @@ var path = require('path');
 var helpers = require('../helpers');
 var runMochaAsync = helpers.runMochaAsync;
 var invokeMochaAsync = helpers.invokeMochaAsync;
-var getSummary = helpers.getSummary;
 var utils = require('../../../lib/utils');
 
 function compareReporters(reporter) {
@@ -107,21 +106,17 @@ describe('--parallel', function() {
     it('should have the same result as with --no-parallel', function() {
       this.timeout(Math.min(this.timeout(), 5000));
 
-      var args = [
-        path.join(__dirname, '..', 'fixtures', 'esm', '*.fixture.mjs')
-      ].concat(esmArgs);
-      return invokeMochaAsync(args.concat('--no-parallel'))[1].then(function(
+      var glob = path.join(__dirname, '..', 'fixtures', 'esm', '*.fixture.mjs');
+      return runMochaAsync(glob, esmArgs.concat('--no-parallel')).then(function(
         expected
       ) {
-        var expectedSummary = getSummary(expected);
-        return invokeMochaAsync(args.concat('--parallel'))[1].then(function(
+        return runMochaAsync(glob, esmArgs.concat('--parallel')).then(function(
           actual
         ) {
-          var actualSummary = getSummary(actual);
-          expect(actualSummary, 'to satisfy', {
-            pending: expectedSummary.pending,
-            passing: expectedSummary.passing,
-            failing: expectedSummary.failing
+          expect(actual, 'to satisfy', {
+            pending: expected.pending,
+            passing: expected.passing,
+            failing: expected.failing
           });
         });
       });
@@ -247,6 +242,30 @@ describe('--parallel', function() {
         'when fulfilled',
         'to have failed'
       );
+    });
+  });
+
+  describe('when used with "grep"', function() {
+    it('should be equivalent to running in serial', function() {
+      this.timeout(Math.max(this.timeout(), 5000));
+      return runMochaAsync(
+        path.join('options', 'parallel', 'test-*.fixture.js'),
+        ['--no-parallel', '--grep="suite d"']
+      ).then(function(expected) {
+        return expect(
+          runMochaAsync(path.join('options', 'parallel', 'test-*.fixture.js'), [
+            '--parallel',
+            '--grep="suite d"'
+          ]),
+          'to be fulfilled with value satisfying',
+          {
+            passing: expected.passing,
+            failing: expected.failing,
+            pending: expected.pending,
+            code: expected.code
+          }
+        );
+      });
     });
   });
 
