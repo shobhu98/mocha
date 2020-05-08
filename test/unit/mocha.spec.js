@@ -17,12 +17,19 @@ describe('Mocha', function() {
   });
 
   describe('constructor', function() {
+    var mocha;
+
     beforeEach(function() {
+      mocha = sandbox.createStubInstance(Mocha);
+      mocha.timeout.returnsThis();
+      mocha.retries.returnsThis();
       sandbox.stub(Mocha.prototype, 'timeout').returnsThis();
       sandbox.stub(Mocha.prototype, 'global').returnsThis();
+      sandbox.stub(Mocha.prototype, 'retries').returnsThis();
+      sandbox.stub(Mocha.prototype, 'rootHooks').returnsThis();
     });
 
-    describe('when "options.timeout" is `undefined`', function() {
+    describe('when `timeout` option is `undefined`', function() {
       it('should not attempt to set timeout', function() {
         // eslint-disable-next-line no-new
         new Mocha({timeout: undefined});
@@ -30,8 +37,8 @@ describe('Mocha', function() {
       });
     });
 
-    describe('when "options.timeout" is `false`', function() {
-      it('should set a timeout of 0', function() {
+    describe('when `timeout` option is `false`', function() {
+      it('should attempt to set timeout', function() {
         // eslint-disable-next-line no-new
         new Mocha({timeout: false});
         expect(Mocha.prototype.timeout, 'to have a call satisfying', [0]).and(
@@ -40,12 +47,40 @@ describe('Mocha', function() {
       });
     });
 
-    describe('when "options.global" is provided', function() {
-      it('should pass "options.global" to #global()', function() {
+    describe('when `global` option is an `Array`', function() {
+      it('should attempt to set globals', function() {
         // eslint-disable-next-line no-new
         new Mocha({global: ['singular']});
         expect(Mocha.prototype.global, 'to have a call satisfying', [
           ['singular']
+        ]).and('was called once');
+      });
+    });
+
+    describe('when `retries` option is present', function() {
+      it('should attempt to set retries`', function() {
+        // eslint-disable-next-line no-new
+        new Mocha({retries: 1});
+        expect(Mocha.prototype.retries, 'to have a call satisfying', [1]).and(
+          'was called once'
+        );
+      });
+    });
+
+    describe('when `retries` option is not present', function() {
+      it('should not attempt to set retries', function() {
+        // eslint-disable-next-line no-new
+        new Mocha({});
+        expect(Mocha.prototype.retries, 'was not called');
+      });
+    });
+
+    describe('when `rootHooks` option is truthy', function() {
+      it('shouid attempt to set root hooks', function() {
+        // eslint-disable-next-line no-new
+        new Mocha({rootHooks: ['a root hook']});
+        expect(Mocha.prototype.rootHooks, 'to have a call satisfying', [
+          ['a root hook']
         ]).and('was called once');
       });
     });
